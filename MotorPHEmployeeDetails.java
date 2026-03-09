@@ -8,6 +8,9 @@ package com.mycompany.motorphg24;
  *
  * @author EJ Serona
  */
+
+// this uses a scanner = login process of the employee and the payroll staff
+
 import java.util.Scanner;
 import java.io.BufferedReader;
 import java.io.FileReader;
