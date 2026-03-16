@@ -3,7 +3,11 @@
     <type>org.netbeans.modules.java.j2seproject</type>
     <configuration>
         <data xmlns="http://www.netbeans.org/ns/j2se-project/3">
+<<<<<<< HEAD
             <name>MotorPH Payroll System</name>
+=======
+            <name>MS 2 - MotorPH Payroll System</name>
+>>>>>>> 9dbe30a6719c33750ccd15a603a24a7a32688477
             <source-roots>
                 <root id="src.dir"/>
             </source-roots>

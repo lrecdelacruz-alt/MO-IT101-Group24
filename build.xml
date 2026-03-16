@@ -7,8 +7,13 @@
 <!-- the Compile on Save feature is turned off for the project. -->
 <!-- You can turn off the Compile on Save (or Deploy on Save) setting -->
 <!-- in the project's Project Properties dialog box.-->
+<<<<<<< HEAD
 <project name="MotorPH_Payroll_System" default="default" basedir=".">
     <description>Builds, tests, and runs the project MotorPH Payroll System.</description>
+=======
+<project name="MS_2_-_MotorPH_Payroll_System" default="default" basedir=".">
+    <description>Builds, tests, and runs the project MS 2 - MotorPH Payroll System.</description>
+>>>>>>> 9dbe30a6719c33750ccd15a603a24a7a32688477
     <import file="nbproject/build-impl.xml"/>
     <!--
 
@@ -58,7 +63,11 @@
 
     An example of overriding the target for project execution could look like this:
 
+<<<<<<< HEAD
         <target name="run" depends="MotorPH_Payroll_System-impl.jar">
+=======
+        <target name="run" depends="MS_2_-_MotorPH_Payroll_System-impl.jar">
+>>>>>>> 9dbe30a6719c33750ccd15a603a24a7a32688477
             <exec dir="bin" executable="launcher.exe">
                 <arg file="${dist.jar}"/>
             </exec>
