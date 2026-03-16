@@ -38,4 +38,6 @@ For computing the deductions, both cutoff amounts are added together first to ge
 
 The payroll report is printed from June to December 2024. For each month, the output shows the hours worked and gross pay per cutoff, the combined monthly gross, each deduction broken down individually, and the final net salary.
 
+If the username is "PayrollStaff", display options: 1. Process Payroll 2. Exit the program
+
 https://docs.google.com/spreadsheets/d/1vzl9uz4tco-TThyqBWqYsEPJDYYldY_D7T7vX7IS2wA/edit?usp=sharing
