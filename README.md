@@ -32,6 +32,8 @@ Each month is split into two payroll periods. Days 1 to 15 fall under the first 
 
 For computing the deductions, both cutoff amounts are added together first to get the monthly gross before any deductions are computed. From there, SSS, PhilHealth, and Pag-IBIG are deducted. The remaining amount becomes the taxable income, which is then used to calculate the withholding tax based on TRAIN Law brackets. Finally, all four deductions are combined and subtracted from the monthly gross to get the net pay.
 
+"All deductions are added to get the total deductions, and the net salary is computed by subtracting the deductions from the total gross salary.
+Finally, the program displays the payroll report for each employee, showing their employee number, name, hourly rate, gross salaries, deductions, and net salary."
 
 The payroll report is printed from June to December 2024. For each month, the output shows the hours worked and gross pay per cutoff, the combined monthly gross, each deduction broken down individually, and the final net salary.
 
