@@ -56,7 +56,8 @@ public class Motorphpayrollsystem {
                     br.readLine(); // skip the header row
                     String line;
                     while ((line = br.readLine()) != null) {
-                        String[] col = splitCSV(line);
+                        String[] col = splitCSV(line); 
+                        //The file exports IDs as "10001.0" so we strip the decimal to match what the user types
                         String csvId = col[0].trim().replace(".0", "");
                         if (csvId.equals(inputId)) {
                             employeeNumber = csvId;
@@ -112,7 +113,8 @@ public class Motorphpayrollsystem {
 
                 } else if (subChoice.equals("2")) {
 
-                    // reads the file to execute the "ProcessPayroll" option for each employee
+                    // reads every row of the file to execute the "ProcessPayroll" option for each employee
+                    // // this way all payroll reports are generated without needing to enter IDs manually
                     try (BufferedReader br = new BufferedReader(new FileReader(empFile))) {
                         br.readLine(); 
                         String line;
@@ -171,6 +173,7 @@ public class Motorphpayrollsystem {
                     firstName      = col[2].trim();
                     birthday       = col[3].trim();
                     basicSalary    = Double.parseDouble(col[13].trim().replace(",", "")); // remove comma from numbers 
+                    // MotorPH computes hourly rate as: monthly salary / 21 working days / 8 hours per day
                     hourlyRate     = basicSalary / 21.0 / 8.0; 
                     found          = true;
                     break; 
@@ -235,18 +238,21 @@ public class Motorphpayrollsystem {
         for (int mi = 0; mi < months.length; mi++) { // creates a loop to compute the payroll through each month
             int month = months[mi];
 
-            // reset the totals 
+            // reset the totals at the start of each month
             double hoursC1 = 0, hoursC2 = 0;
             double grossC1 = 0, grossC2 = 0;
 
             for (int d = 0; d < dates.size(); d++) {
                 int dateInt = dates.get(d);
+                //  // extract the month and day from the YYYYMMDD integer using modulo and division
                 int m   = (dateInt / 100) % 100; 
                 int day = dateInt % 100;          
-                if (m != month) continue;         
+                if (m != month) continue;         // // skip records that don't belong to the current month
 
                 double hrs = computeHoursWorked(logins.get(d), logouts.get(d));
 
+                  // MotorPH splits each month into two payroll cutoffs:
+                // 1st cutoff covers days 1-15, 2nd cutoff covers days 16 onwards
                 if (day <= 15) { // first cutoff
                     hoursC1 += hrs;
                     grossC1 += hrs * hourlyRate;
@@ -255,11 +261,14 @@ public class Motorphpayrollsystem {
                     grossC2 += hrs * hourlyRate;
                 }
             }
-
+            
+            // both cutoffs must be combined first before computing any deductions
             double monthlyGross    = grossC1 + grossC2;
             double sss             = computeSSS(basicSalary);
             double philHealth      = computePhilHealth(basicSalary);
             double pagIBIG         = computePagIBIG(basicSalary);
+            // SSS, PhilHealth, and Pag-IBIG are deducted first to get the taxable income
+            // withholding tax is always computed last because it is based on what remains after the three contributions
             double totalDeductions = sss + philHealth + pagIBIG;
             double taxableIncome   = monthlyGross - totalDeductions; 
             double tax             = computeWithholdingTax(taxableIncome);
@@ -287,24 +296,33 @@ public class Motorphpayrollsystem {
     }
 
     // This method computes how many hours the employee actually worked
+    // business rules: work window is 8:00 AM to 5:00 PM only, no overtime is counted
+    // a 5-minute grace period applies — logging in at 8:05 or earlier is treated as exactly 8:00 AM
+    // one hour is always deducted for the mandatory lunch break
     static double computeHoursWorked(int loginMin, int logoutMin) {
-        int workStart = 8 * 60;     
-        int workEnd   = 17 * 60;    
-        int graceEnd  = 8 * 60 + 5; 
+        int workStart = 8 * 60;     // official start of shift: 8:00 AM = 480 minutes
+        int workEnd   = 17 * 60;    // official end of shift: 5:00 PM = 1020 minutes
+        int graceEnd  = 8 * 60 + 5; // applying the 5-minute grace period: 8:05 AM = 485 minutes
 
+         // if the employee logged in within the grace period, treat it as an on-time 8:00 AM login
         if (loginMin <= graceEnd) loginMin = workStart;
 
+            // cap the start and end times to the official work window to exclude any time outside of it
         int effectiveStart = Math.max(loginMin, workStart);
         int effectiveEnd   = Math.min(logoutMin, workEnd);
         int spanMin        = effectiveEnd - effectiveStart;
         if (spanMin <= 0) return 0.0;
 
+        // convert minutes to hours and subtract 1 hour for the mandatory lunch break
         return Math.max(0.0, spanMin / 60.0 - 1.0);
     }
 
     /*
     This method enforces a smarter way to read the csv file 
     by splitting it into columns and respecting quotation marks
+    A normal split(",") would break on addresses like "Valero Street, Makati City"
+    because it treats every comma as a column separator.
+    This method only splits on commas that are outside of quotation marks.
     */
    
     static String[] splitCSV(String line) {
@@ -326,27 +344,36 @@ public class Motorphpayrollsystem {
         return columns.toArray(new String[0]);
     }
 
+     // computes the employee's SSS contribution based on the Monthly Salary Credit (MSC) table
+    // MSC = the salary bracket used by SSS to determine contributions, rounded to the nearest 500
+    // the employee contribution rate is 4.5% of their MSC, with a maximum MSC of PHP 30,000
     static double computeSSS(double basicSalary) {
-        double msc;
+        double msc; // MSC = Monthly Salary Credit, the SSS bracket value for this salary
         if (basicSalary < 3250)      msc = 3000;
         else if (basicSalary < 3750) msc = 3500;
         else                         msc = Math.min(Math.round(basicSalary / 500.0) * 500.0, 30000);
         return msc * 0.045;
     }
-
+    
+     // computes the employee's PhilHealth contribution
+    // the employee share is 2.5% of their basic salary, with a floor of PHP 250 and a ceiling of PHP 2,500
     static double computePhilHealth(double basicSalary) {
         double c = basicSalary * 0.025;
-        if (c < 250.0)  c = 250.0;
-        if (c > 2500.0) c = 2500.0;
+        if (c < 250.0)  c = 250.0; // minimum contribution is PHP 250
+        if (c > 2500.0) c = 2500.0; // maximum contribution is PHP 2,500
         return c;
     }
     
+    // computes the employee's Pag-IBIG contribution
+    // the rate is 2% for salaries above PHP 1,500, and 1% for salaries at or below PHP 1,500
+    // the employee share is capped at PHP 100 regardless of salary
     static double computePagIBIG(double basicSalary) {
         double rate = (basicSalary > 1500) ? 0.02 : 0.01;
-        return Math.min(basicSalary * rate, 100.0);
+        return Math.min(basicSalary * rate, 100.0); // statutory cap of PHP 100
     }
 
-
+     // computes withholding tax based on the TRAIN Law monthly tax brackets
+    // each bracket has a fixed base tax plus a percentage applied only to the amount above that bracket's floor
     static double computeWithholdingTax(double taxableIncome) {
         if (taxableIncome <= 20832)       return 0.0;
         else if (taxableIncome <= 33332)  return (taxableIncome - 20833) * 0.20;
